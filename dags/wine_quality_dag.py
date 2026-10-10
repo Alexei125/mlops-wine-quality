@@ -4,7 +4,11 @@ from airflow.providers.standard.operators.python import PythonOperator
 
 
 def load_data():
-    print("Представим, что тут загрузились данные о вине...")
+    import pandas as pd
+    df = pd.read_csv('/home/alexei/PycharmProjects/mlops-wine-quality/data/winequality-red.csv')
+    print(f"Данные загружены. Размер: {df.shape}")
+    print(f"Колонки: {list(df.columns)}")
+    print(df.head(3))
 
 
 def train_model():
