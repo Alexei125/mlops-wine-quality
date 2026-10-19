@@ -17,7 +17,7 @@ jobs:
       - name: Install flake8
         run: pip install flake8
       - name: Run flake8
-        run: flake8 src/ dags/ --max-line-length=120 --ignore=E501,W503
+        run: flake8 src/ dags/ tests/ --max-line-length=120 --ignore=E501,W503
 
   dvc-check:
     name: Check DVC data and model
@@ -54,7 +54,6 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          # Важно: здесь должен быть requests, а не httpx
           pip install fastapi uvicorn pytest requests scikit-learn joblib pandas
       - name: Install DVC with S3 support
         run: pip install dvc dvc-s3
@@ -63,15 +62,13 @@ jobs:
           dvc remote modify --local myremote endpointurl ${{ secrets.DVC_ENDPOINT_URL }}
           dvc remote modify --local myremote access_key_id ${{ secrets.DVC_ACCESS_KEY_ID }}
           dvc remote modify --local myremote secret_access_key ${{ secrets.DVC_SECRET_ACCESS_KEY }}
-      - name: DVC pull model
-        run: |
-          dvc remote list
-          dvc status -c
-          dvc pull models/wine_quality_model.pkl.dvc -v
+          dvc remote modify --local myremote ssl_verify false
+          dvc remote modify --local myremote use_ssl false
+      - name: DVC pull data and model
+        run: dvc pull
       - name: Start API server
         run: |
-          # Запускаем сервер в фоне и ждем 10 секунд
-          uvicorn src.api.main:app --port 8001 & 
+          uvicorn src.api.main:app --port 8001 &
           sleep 10
       - name: Run tests
         run: pytest tests/ -v

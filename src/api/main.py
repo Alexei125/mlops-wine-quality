@@ -26,10 +26,7 @@ class WineFeatures(BaseModel):
 
 
 # --- Загрузка модели при старте ---
-MODEL_PATH = (
-    "/home/alexei/PycharmProjects/mlops-wine-quality/models/wine_quality_model.pkl"
-)
-model = None
+MODEL_PATH = os.getenv("MODEL_PATH", "models/wine_quality_model.pkl")
 
 
 @app.on_event("startup")
