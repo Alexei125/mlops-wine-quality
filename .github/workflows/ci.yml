@@ -36,6 +36,8 @@ jobs:
           dvc remote modify --local myremote endpointurl ${{ secrets.DVC_ENDPOINT_URL }}
           dvc remote modify --local myremote access_key_id ${{ secrets.DVC_ACCESS_KEY_ID }}
           dvc remote modify --local myremote secret_access_key ${{ secrets.DVC_SECRET_ACCESS_KEY }}
+          dvc remote modify --local myremote ssl_verify false
+          dvc remote modify --local myremote use_ssl false
       - name: DVC pull
         run: dvc pull
 
