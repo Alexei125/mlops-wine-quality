@@ -65,7 +65,9 @@ jobs:
           dvc remote modify --local myremote ssl_verify false
           dvc remote modify --local myremote use_ssl false
       - name: DVC pull data and model
-        run: dvc pull
+        run: |
+          dvc pull data/winequality-red.csv.dvc
+          dvc pull models/wine_quality_model.pkl.dvc -v
       - name: Start API server
         run: |
           uvicorn src.api.main:app --port 8001 &
