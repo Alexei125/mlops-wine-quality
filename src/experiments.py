@@ -9,15 +9,17 @@ import mlflow.sklearn
 
 # 1. Загрузка данных
 # Используем абсолютный путь, чтобы скрипт работал из любой папки
-DATA_PATH = '/home/alexei/PycharmProjects/mlops-wine-quality/data/winequality-red.csv'
+DATA_PATH = "/home/alexei/PycharmProjects/mlops-wine-quality/data/winequality-red.csv"
 df = pd.read_csv(DATA_PATH)
 
 # Разделяем на признаки и целевую переменную (quality)
-X = df.drop('quality', axis=1)
-y = df['quality']
+X = df.drop("quality", axis=1)
+y = df["quality"]
 
 # Фиксируем random_state для воспроизводимости
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
 
 # 2. Настройка MLflow
 mlflow.set_experiment("wine_quality_experiments")
@@ -89,5 +91,7 @@ for params in rf_params_list:
         mlflow.log_metric("r2", r2)
 
         # Артефакт (модель)
-        mlflow.sklearn.log_model(rf, "model", skops_trusted_types=["sklearn.tree._tree.Tree"])
+        mlflow.sklearn.log_model(
+            rf, "model", skops_trusted_types=["sklearn.tree._tree.Tree"]
+        )
         print(f"{run_name} завершена")

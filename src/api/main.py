@@ -26,7 +26,9 @@ class WineFeatures(BaseModel):
 
 
 # --- Загрузка модели при старте ---
-MODEL_PATH = '/home/alexei/PycharmProjects/mlops-wine-quality/models/wine_quality_model.pkl'
+MODEL_PATH = (
+    "/home/alexei/PycharmProjects/mlops-wine-quality/models/wine_quality_model.pkl"
+)
 model = None
 
 
@@ -41,6 +43,7 @@ def load_model():
 
 
 # --- Эндпоинты ---
+
 
 @app.post("/predict")
 def predict(data: WineFeatures) -> float:
@@ -63,15 +66,6 @@ def health() -> dict:
 def model_info() -> dict:
     return {
         "model_type": "RandomForestRegressor",
-        "params": {
-            "n_estimators": 200,
-            "max_depth": None,
-            "random_state": 42
-        },
-        "metrics": {
-            "MAE": 0.4251,
-            "MSE": 0.3059,
-            "RMSE": 0.5531,
-            "R2": 0.5319
-        }
+        "params": {"n_estimators": 200, "max_depth": None, "random_state": 42},
+        "metrics": {"MAE": 0.4251, "MSE": 0.3059, "RMSE": 0.5531, "R2": 0.5319},
     }
