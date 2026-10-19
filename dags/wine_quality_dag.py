@@ -20,33 +20,42 @@ def train_model():
     from sklearn.model_selection import train_test_split
     import joblib
     import os
+    import yaml
+    import subprocess
 
-    # 1. Загрузка данных
-    df = pd.read_csv(
-        "/home/alexei/PycharmProjects/mlops-wine-quality/data/winequality-red.csv"
-    )
-    X = df.drop("quality", axis=1)
-    y = df["quality"]
+    # 1. Чтение параметров из конфига
+    config_path = '/home/alexei/PycharmProjects/mlops-wine-quality/dags/config.yaml'
+    with open(config_path, 'r') as f:
+        config = yaml.safe_load(f)
 
-    # Фиксируем random_state для воспроизводимости
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
+    model_params = config['model']
+    print(f"Параметры модели из конфига: {model_params}")
 
-    # 2. Обучение лучшей модели (RandomForest_n200_dNone из MLflow)
-    model = RandomForestRegressor(n_estimators=200, max_depth=None, random_state=42)
+    # 2. Загрузка данных
+    df = pd.read_csv('/home/alexei/PycharmProjects/mlops-wine-quality/data/winequality-red.csv')
+    X = df.drop('quality', axis=1)
+    y = df['quality']
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # 3. Обучение модели
+    model = RandomForestRegressor(**model_params)
     model.fit(X_train, y_train)
-    print("Модель RandomForestRegressor обучена.")
+    print("Модель обучена.")
 
-    # 3. Сохранение модели
-    model_path = (
-        "/home/alexei/PycharmProjects/mlops-wine-quality/models/wine_quality_model.pkl"
-    )
+    # 4. Сохранение модели локально
+    model_path = '/home/alexei/PycharmProjects/mlops-wine-quality/models/wine_quality_model.pkl'
     os.makedirs(os.path.dirname(model_path), exist_ok=True)
     joblib.dump(model, model_path)
-    print(f"Модель сохранена в {model_path}")
+    print(f"Модель сохранена локально в {model_path}")
 
-    # Возвращаем путь для следующего таска (через XCom)
+    # 5. Сохранение модели в DVC (добавление и пуш)
+    print("Добавляем модель в DVC...")
+    subprocess.run(["dvc", "add", model_path], check=True, cwd='/home/alexei/PycharmProjects/mlops-wine-quality')
+    print("Пушим модель в удаленное хранилище...")
+    subprocess.run(["dvc", "push", model_path + ".dvc"], check=True,
+                   cwd='/home/alexei/PycharmProjects/mlops-wine-quality')
+    print("Модель успешно сохранена в DVC.")
+
     return model_path
 
 
