@@ -3,11 +3,17 @@ from pydantic import BaseModel, Field
 import joblib
 import pandas as pd
 import os
+import json
+import subprocess
 
 app = FastAPI(title="Wine Quality Prediction API")
 
+# Определяем корень проекта
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+MODEL_PATH = os.path.join(PROJECT_ROOT, "models", "wine_quality_model.pkl")
+METADATA_PATH = os.path.join(PROJECT_ROOT, "src", "model_metadata.json")
 
-# --- Схема входных данных (Pydantic) с правильными именами колонок ---
+
 class WineFeatures(BaseModel):
     fixed_acidity: float = Field(alias="fixed acidity")
     volatile_acidity: float = Field(alias="volatile acidity")
@@ -22,34 +28,38 @@ class WineFeatures(BaseModel):
     alcohol: float
 
     class Config:
-        populate_by_name = True  # Позволяет использовать имена полей и их alias
+        populate_by_name = True
 
 
-# --- Загрузка модели при старте ---
-MODEL_PATH = os.getenv("MODEL_PATH", "models/wine_quality_model.pkl")
+model = None
+metadata = {}
 
 
 @app.on_event("startup")
 def load_model():
-    global model
+    global model, metadata
+    # Замечание 2: Подтягиваем актуальную модель из DVC
+    print("Загрузка модели из DVC...")
+    subprocess.run(["dvc", "pull", "models/wine_quality_model.pkl.dvc", "src/model_metadata.json.dvc"], check=False,
+                   cwd=PROJECT_ROOT)
+
     if os.path.exists(MODEL_PATH):
         model = joblib.load(MODEL_PATH)
-        print(f"Модель успешно загружена из {MODEL_PATH}")
+        print(f"Модель загружена из {MODEL_PATH}")
     else:
-        print(f"ВНИМАНИЕ: Модель не найдена по пути {MODEL_PATH}")
+        print(f"Модель не найдена: {MODEL_PATH}")
 
-
-# --- Эндпоинты ---
+    if os.path.exists(METADATA_PATH):
+        with open(METADATA_PATH, 'r') as f:
+            metadata = json.load(f)
+        print("Метаданные загружены.")
 
 
 @app.post("/predict")
 def predict(data: WineFeatures) -> float:
     if model is None:
         raise RuntimeError("Модель не загружена")
-
-    # Преобразуем в dict с именами колонок как в обучении (с пробелами)
     input_df = pd.DataFrame([data.model_dump(by_alias=True)])
-
     prediction = model.predict(input_df)[0]
     return float(prediction)
 
@@ -61,8 +71,7 @@ def health() -> dict:
 
 @app.get("/model-info")
 def model_info() -> dict:
-    return {
-        "model_type": "RandomForestRegressor",
-        "params": {"n_estimators": 200, "max_depth": None, "random_state": 42},
-        "metrics": {"MAE": 0.4251, "MSE": 0.3059, "RMSE": 0.5531, "R2": 0.5319},
-    }
+    # Замечание 3: Возвращаем реальные метаданные
+    if not metadata:
+        return {"error": "Метаданные не найдены. Обучите модель."}
+    return metadata
