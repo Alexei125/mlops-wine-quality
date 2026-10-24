@@ -1,14 +1,11 @@
-from http import client
-
 import requests
 import os
 
-# Адрес, на котором запущен ваш uvicorn (из скриншота — 8001)
 BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8001")
 
 
 def test_health():
-    response = client.get(f"{BASE_URL}/healthcheck")  # было /health
+    response = requests.get(f"{BASE_URL}/healthcheck")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 
