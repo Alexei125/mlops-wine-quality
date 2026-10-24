@@ -45,3 +45,4 @@ def test_predict_invalid_data():
     payload = {"fixed_acidity": 7.4}
     response = requests.post(f"{BASE_URL}/predict", json=payload)
     assert response.status_code == 422
+
