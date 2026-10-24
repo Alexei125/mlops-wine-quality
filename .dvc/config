@@ -1,0 +1,5 @@
+[core]
+    remote = myremote
+['remote "myremote"']
+    url = s3://aleksej-rozhdestvenskij-rsp8375/dvcstore
+    endpointurl = https://minio.lab.karpov.courses

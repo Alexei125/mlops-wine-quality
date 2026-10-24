@@ -216,3 +216,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+.dvc/config.local
+.idea/
+models/*
+!models/*.dvc
+!models/.gitignore
+mlruns/
+mlflow.db
