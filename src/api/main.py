@@ -38,19 +38,31 @@ metadata = {}
 @app.on_event("startup")
 def load_model():
     global model, metadata
-    # Замечание 2: Подтягиваем актуальную модель из DVC
     print("Загрузка модели из DVC...")
-    subprocess.run(["dvc", "pull", "models/wine_quality_model.pkl.dvc", "src/model_metadata.json.dvc"], check=False,
-                   cwd=PROJECT_ROOT)
+    try:
+        result = subprocess.run(
+            ["dvc", "pull", "models/wine_quality_model.pkl.dvc", "src/model_metadata.json.dvc"],
+            check=True,  # ← теперь check=True, ошибка не проглотится
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+        )
+        print(result.stdout)
+    except subprocess.CalledProcessError as e:
+        print(f"ОШИБКА загрузки модели из DVC: {e.stderr}")
+        # Модель не загрузилась — сервис не может работать.
+        # Можно либо бросить исключение, либо продолжить (с пустой моделью).
+        # Лучше бросить, чтобы CI упал и не пропустил проблему.
+        raise RuntimeError("Не удалось загрузить модель из DVC") from e
 
     if os.path.exists(MODEL_PATH):
         model = joblib.load(MODEL_PATH)
         print(f"Модель загружена из {MODEL_PATH}")
     else:
-        print(f"Модель не найдена: {MODEL_PATH}")
+        raise RuntimeError(f"Модель не найдена после dvc pull: {MODEL_PATH}")
 
     if os.path.exists(METADATA_PATH):
-        with open(METADATA_PATH, 'r') as f:
+        with open(METADATA_PATH, "r") as f:
             metadata = json.load(f)
         print("Метаданные загружены.")
 
@@ -64,8 +76,8 @@ def predict(data: WineFeatures) -> float:
     return float(prediction)
 
 
-@app.get("/health")
-def health() -> dict:
+@app.get("/healthcheck")
+def healthcheck() -> dict:
     return {"status": "ok"}
 
 

@@ -1,3 +1,5 @@
+from http import client
+
 import requests
 import os
 
@@ -6,7 +8,7 @@ BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8001")
 
 
 def test_health():
-    response = requests.get(f"{BASE_URL}/health")
+    response = client.get(f"{BASE_URL}/healthcheck")  # было /health
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 
